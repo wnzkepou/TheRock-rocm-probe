@@ -1,15 +1,34 @@
 # Windows ROCm build for the RX 6800
 
-This note records the status and approximate build process for the local
-TheRock checkout at `C:\Workspaces\TheRock-rocm-probe`. It is a machine- and
-revision-specific build record, not general Windows installation guidance. For
-normal TheRock setup, start with the repository's
-[Windows support guide](../windows_support.md).
+This repository is a personal, experimental TheRock fork documenting a
+Windows ROCm build for the AMD Radeon RX 6800. The fork contains changes to
+TheRock and its `rocm-systems` and `rocm-libraries` submodules; it is not an
+official AMD release or a general Windows installation guide. For general
+TheRock setup, see the upstream
+[Windows support guide](https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md).
+
+## Get this fork
+
+Clone the feature branch with its pinned submodules:
+
+```powershell
+git clone --recurse-submodules --branch rx6800-windows-rocm `
+  https://github.com/wnzkepou/TheRock-rocm-probe.git
+cd TheRock-rocm-probe
+```
+
+The parent repository pins the matching commits from the personal
+[`rocm-systems`](https://github.com/wnzkepou/rocm-systems/tree/rx6800-windows-rocm)
+and
+[`rocm-libraries`](https://github.com/wnzkepou/rocm-libraries/tree/rx6800-windows-rocm)
+forks. Keep those pins when building this branch; updating submodules
+independently may drop the compatibility fixes.
 
 ## Status
 
-- TheRock checkout: `a33854b` (`main`); `rocm-systems` and `rocm-libraries`
-  are checked out at their pinned submodule revisions.
+- TheRock feature branch: `rx6800-windows-rocm`.
+- The `rocm-systems` and `rocm-libraries` submodules are pinned to the
+  corresponding commits on their matching feature branches.
 - Host: Windows 10, Visual Studio 2022, AMD Radeon RX 6800.
 - GPU target list: `gfx1030;gfx1031` (the RX 6800 reports `gfx1030`).
 - The Windows-applicable components selected in this build were built and
@@ -29,9 +48,9 @@ other optional components are disabled according to the build cache. Inspect
 
 ## Important local source changes
 
-The checkout contains uncommitted Windows/shared-HSA compatibility changes.
-They are part of this local experiment and are not implied to be upstream
-TheRock behavior:
+The feature branch contains Windows/shared-HSA compatibility changes. These
+are experimental fork changes and are not implied to be upstream TheRock
+behavior:
 
 - `core/CMakeLists.txt` selects shared ROCr and disables PAL when
   `THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME` is enabled.
@@ -46,18 +65,19 @@ TheRock behavior:
 - `rocm-libraries/projects/hipblaslt/device-library/matrix-transform/matrix_transform.h`
   has a Windows/HIP vector-access compatibility fix.
 
-Keep these edits and the submodule changes in mind before updating or replacing
-this checkout. The `build-rocm1030` directory contains generated build files
-and local workarounds; it is not a clean, portable build recipe.
+The source changes are committed in this fork and its two modified submodules.
+The `build-rocm1030` directory contains generated build files and local
+workarounds; it is not a clean, portable build recipe.
 
 ## Approximate build process
 
-1. Follow TheRock's Windows support guide and install the required Visual
-   Studio 2022 C++ tools, Windows SDK, CMake, Ninja, Git, and Python.
-2. Clone TheRock, initialize its Python environment, and fetch the pinned
-   sources/submodules using the repository's `build_tools\fetch_sources.py`.
-   The math-library build also needs the pinned `rocm-libraries` and
-   `libhipcxx` submodules.
+1. Follow TheRock's upstream Windows support guide and install the required
+   Visual Studio 2022 C++ tools, Windows SDK, CMake, Ninja, Git, and Python.
+2. Clone this fork using the instructions above. Initialize its Python
+   environment, install `requirements.txt`, and fetch the remaining pinned
+   sources using `build_tools\fetch_sources.py`. The `rocm-systems` and
+   `rocm-libraries` submodules are already pinned by the parent checkout; the
+   math-library build also uses the pinned `libhipcxx` source.
 3. Configure a Ninja build for `gfx1030;gfx1031`, enable the experimental
    `THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME` option, and select the desired
    Windows-capable feature groups. In this checkout those settings are in
@@ -113,5 +133,6 @@ and local workarounds; it is not a clean, portable build recipe.
 - Ollama validation is separate from installing TheRock. Do not copy
   replacement DLLs into another ROCm installation without first backing up
   the originals and testing with an isolated setup. The successful Ollama
-  result above was measured with the `rocm_v7_1` backend, not inferred from
-  `rocminfo` alone.
+  result above was measured on this machine with the `rocm_v7_1` backend; it
+  is not inferred from `rocminfo` alone and does not guarantee compatibility
+  on other Windows systems or Ollama versions.

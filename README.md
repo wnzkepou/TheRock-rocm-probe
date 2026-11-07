@@ -1,377 +1,79 @@
-# TheRock
+# TheRock ROCm on Windows: RX 6800
 
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![Multi-arch CI](https://github.com/ROCm/TheRock/actions/workflows/multi_arch_ci.yml/badge.svg?branch=main&event=push)](https://github.com/ROCm/TheRock/actions/workflows/multi_arch_ci.yml?query=branch%3Amain) [![Multi-arch CI ASan](https://github.com/ROCm/TheRock/actions/workflows/multi_arch_ci_asan.yml/badge.svg?branch=main)](https://github.com/ROCm/TheRock/actions/workflows/multi_arch_ci_asan.yml?query=branch%3Amain)
+This personal, experimental fork documents a native Windows ROCm build for the
+AMD Radeon RX 6800 (GPU target `gfx1030`). It is based on
+[AMD's TheRock](https://github.com/ROCm/TheRock), with companion changes in
+the [`rocm-systems`](https://github.com/wnzkepou/rocm-systems/tree/rx6800-windows-rocm)
+and
+[`rocm-libraries`](https://github.com/wnzkepou/rocm-libraries/tree/rx6800-windows-rocm)
+submodules.
 
-TheRock (The HIP Environment and ROCm Kit) is the open source build and release system for HIP and ROCm, and the top-level entry point that integrates ROCm's components into a single buildable, testable, and releasable product. Since ROCm 7.14, ROCm is built and released through TheRock, which replaces the previous monolithic release process with a modular workflow that makes ROCm components easier to build, integrate, and distribute. It is designed for ROCm contributors as well as developers, researchers, and advanced users who need access to the latest ROCm capabilities without the complexity of traditional package-based installations. The project is under active development and welcomes contributors. Come try us out! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more info and the [FAQ](docs/faq.md) for frequently asked questions.
+> **Scope:** This is a machine-tested research build, not an official AMD
+> Windows distribution or a claim that every ROCm feature works on every
+> Windows system.
 
-For general information about the ROCm software platform, see the [ROCm documentation](https://rocm.docs.amd.com/).
+## What has been verified
 
-## Features
+- TheRock's installed `rocminfo.exe` detects the RX 6800 as `gfx1030`.
+- Ollama was tested on this machine with the locally built ROCr/HIP runtime
+  and its `rocm_v7_1` backend. Ollama identified the RX 6800, offloaded all
+  29 model layers to the GPU, and reported the model resident in VRAM.
+- The Windows-applicable components selected for this configuration built
+  and installed to `C:\Workspaces\TheRock-rocm-probe\install`.
 
-TheRock includes:
+The build targets `gfx1030;gfx1031`. It does not include every TheRock feature:
+CV, media, emulation, and WSL were disabled, as were other optional components.
+See the detailed notes for the exact configuration and caveats.
 
-- Nightly releases of ROCm and PyTorch
-- A CMake super-project for HIP and ROCm source builds
-- Support for building PyTorch and JAX with ROCm from source
-- Operating system support including multiple Linux distributions and native Windows
-- Tools for developing individual ROCm components
-- Comprehensive CI/CD pipelines for building, testing, and releasing supported components
+## Get the source
 
-## Installing from releases
+Clone this branch with its pinned submodules:
 
-> [!IMPORTANT]
-> See the [Releases Page](RELEASES.md) for instructions on how to install prebuilt
-> ROCm, PyTorch, and JAX packages.
-
-## Project status
-
-See the unified project HUD at https://therock-hud.amd.com/
-
-### Nightly release status
-
-Multi-arch releases (all GPU architectures):
-
-| Job description                        | Status                                                                                                                                                                                                                                                     |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build ROCm artifacts/tarballs/packages | [![Multi-Arch Release](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release.yml)                                                                      |
-| ASan instrumented build                | [![Multi-Arch Release ASan](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_asan.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_asan.yml)                                                       |
-| Test ROCm artifacts                    | [![Test Artifacts](https://github.com/ROCm/rockrel/actions/workflows/test_artifacts.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/test_artifacts.yml)                                                                                  |
-| Test ROCm native Linux packages        | [![Test Native Linux Packages Install](https://github.com/ROCm/rockrel/actions/workflows/test_native_linux_packages_install.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/test_native_linux_packages_install.yml)                      |
-| PyTorch packages - Linux build/test    | [![Multi-Arch Release Linux PyTorch Wheels](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_linux_pytorch_wheels.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_linux_pytorch_wheels.yml)       |
-| PyTorch packages - Windows build/test  | [![Multi-Arch Release Windows PyTorch Wheels](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_windows_pytorch_wheels.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_windows_pytorch_wheels.yml) |
-| PyTorch packages - full tests          | [![Test PyTorch Wheels (Full Suite)](https://github.com/ROCm/rockrel/actions/workflows/test_pytorch_wheels_full.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/test_pytorch_wheels_full.yml)                                            |
-| JAX packages - Linux build/test        | [![Multi-Arch Release Linux JAX Wheels](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_linux_jax_wheels.yml/badge.svg)](https://github.com/ROCm/rockrel/actions/workflows/multi_arch_release_linux_jax_wheels.yml)                   |
-
-## Building from source
-
-> [!WARNING]
-> **Disk Space and Build Time Requirements:** Building from source requires approximately 200 GB of free disk space and can take multiple hours to compile. Builds will fail if you run out of space.
-
-We keep the following instructions for recent, commonly used operating system
-versions. Most build failures are due to minor operating system differences in
-dependencies and project setup. Refer to the
-[Environment Setup Guide](docs/environment_setup_guide.md) for contributed
-instructions and configurations for alternatives.
-
-> [!TIP]
-> While building from source offers the greatest flexibility,
-> [installing from releases](#installing-from-releases) in supported
-> configurations is often faster and easier.
-
-> [!IMPORTANT]
-> Frequent setup and building problems and their solutions can be found in section [Common Issues](docs/environment_setup_guide.md#common-issues).
-
-### Setup - Ubuntu (24.04)
-
-> [!TIP]
-> `dvc` is used for version control of pre-compiled MIOpen kernels.
-> `dvc` is not a hard requirement, but it does reduce compile time.
-> `snap install --classic dvc` can be used to install on Ubuntu.
-> Visit the [DVC website](https://dvc.org/doc/install/linux) for other installation methods.
-
-```bash
-# Install Ubuntu dependencies
-sudo apt update
-sudo apt install gfortran git ninja-build cmake g++ pkg-config xxd automake libtool python3-venv python3-dev libegl1-mesa-dev texinfo bison flex
-
-# Clone the repository
-git clone https://github.com/ROCm/TheRock.git
-cd TheRock
-
-# Install a patched patchelf from source. For details see
-# https://github.com/ROCm/TheRock/blob/main/docs/environment_setup_guide.md#patchelf
-sudo apt install curl make
-sudo env INSTALL_PREFIX=/usr/local ./dockerfiles/install_pinned_patchelf.sh
-
-# Install Rust 1.95 for the Mirage emulator build
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-  sh -s -- --default-toolchain 1.95.0
-source "$HOME/.cargo/env"
-
-# Init python virtual environment and install python dependencies
-python3 -m venv .venv && source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# Download submodules and apply patches
-python3 ./build_tools/fetch_sources.py
+```powershell
+git clone --recurse-submodules --branch rx6800-windows-rocm `
+  https://github.com/wnzkepou/TheRock-rocm-probe.git
+cd TheRock-rocm-probe
 ```
 
-### Setup - Windows 11 (VS 2022)
+The parent repository pins the matching submodule commits. Keep those pins
+when building this branch; independently updating either submodule may remove
+the compatibility changes.
 
-> [!IMPORTANT]
-> See [windows_support.md](./docs/development/windows_support.md) for setup
-> instructions on Windows, in particular
-> the section for
-> [installing tools](./docs/development/windows_support.md#install-tools).
+## Build overview
 
-If the build system is a non-English system. Make sure to switch to `utf-8`.
+1. Prepare Windows and Visual Studio 2022 using the
+   [upstream TheRock Windows support guide](https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md).
+2. Set up Python dependencies and fetch the remaining pinned sources with
+   `build_tools\fetch_sources.py`.
+3. Configure a Ninja build for `gfx1030;gfx1031`, enable the experimental
+   `THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME` option, and explicitly select
+   the desired Windows-capable feature groups.
+4. From a Visual Studio developer command prompt, build and install:
 
-```cmd
-chcp 65001
-```
+   ```cmd
+   cd /d path\to\TheRock-rocm-probe\build-rocm1030
+   ninja install-rocm -j 2
+   ```
 
-```bash
-# Install dependencies following the Windows support guide
+   During the tested build, Git's Unix tools needed to precede other patch
+   utilities on `PATH`. Some generated nested Ninja rules also needed a local
+   Windows resource-compiler workaround. Long HIPBLASLt/TensileLite paths
+   required build-directory-only workarounds. These details are specific to
+   the tested checkout and are documented below.
+5. Run the installed `bin\rocminfo.exe` and confirm the HSA agent reports
+   the RX 6800 and `gfx1030`.
 
-# Clone the repository
-git clone https://github.com/ROCm/TheRock.git
-cd TheRock
+## Detailed status and build notes
 
-# Init python virtual environment and install python dependencies
-python -m venv .venv
-.venv\Scripts\Activate.bat
-pip install --upgrade pip
-pip install -r requirements.txt
+See the
+[Windows RX 6800 build notes](docs/development/rx6800-windows-rocm/readme.md)
+for the tested configuration, experimental source changes, approximate
+commands, DLL/driver cautions, and known limitations.
 
-# Download submodules and apply patches
-# Note that dvc is used for pulling large files
-python ./build_tools/fetch_sources.py
-```
+## Disclaimer
 
-### Build configuration
-
-The build can be customized through cmake feature flags.
-
-#### Required configuration flags
-
-- `-DTHEROCK_AMDGPU_FAMILIES=`
-
-  or
-
-- `-DTHEROCK_AMDGPU_TARGETS=`
-
-> [!NOTE]
-> Not all family and targets are currently supported.
-> See [therock_amdgpu_targets.cmake](cmake/therock_amdgpu_targets.cmake) file
-> for available options.
-
-#### Discovering available targets on your system
-
-In case you don't have an existing ROCm/HIP installation from which you can run any of these tools:
-
-| Tool                    | Platform |
-| ----------------------- | -------- |
-| `amd-smi`               | Linux    |
-| `rocm-smi`              | Linux    |
-| `rocm_agent_enumerator` | Linux    |
-| `hipinfo`               | Windows  |
-| `offload-arch`          | Both     |
-
-You can install the `rocm` Python package for any architecture inside a venv and run `offload-arch` from there:
-
-1. `python build_tools/setup_venv.py --index-name nightly --packages rocm .tmpvenv`
-1. `.tmpvenv/bin/offload-arch` on Linux, `.tmpvenv\Scripts\offload-arch` on Windows
-1. `rm -rf .tmpvenv`
-
-#### Optional configuration flags
-
-By default, the project builds everything available. The following group flags
-enable/disable selected subsets:
-
-| Group flag                         | Description                            |
-| ---------------------------------- | -------------------------------------- |
-| `-DTHEROCK_ENABLE_ALL=OFF`         | Disables all optional components       |
-| `-DTHEROCK_ENABLE_CORE=OFF`        | Disables all core components           |
-| `-DTHEROCK_ENABLE_COMM_LIBS=OFF`   | Disables all communication libraries   |
-| `-DTHEROCK_ENABLE_CV_LIBS=OFF`     | Disables all computer vision libraries |
-| `-DTHEROCK_ENABLE_DEBUG_TOOLS=OFF` | Disables all debug tools               |
-| `-DTHEROCK_ENABLE_MATH_LIBS=OFF`   | Disables all math libraries            |
-| `-DTHEROCK_ENABLE_ML_LIBS=OFF`     | Disables all ML libraries              |
-| `-DTHEROCK_ENABLE_PROFILER=OFF`    | Disables profilers                     |
-| `-DTHEROCK_ENABLE_DC_TOOLS=OFF`    | Disables data center tools             |
-| `-DTHEROCK_ENABLE_MEDIA_LIBS=OFF`  | Disables all media libraries           |
-| `-DTHEROCK_ENABLE_WSL=ON`          | Enables WSL-specific artifacts         |
-| `-DTHEROCK_ENABLE_EMULATION=ON`    | Enables emulation tools                |
-
-Individual features can be controlled separately (typically in combination with
-`-DTHEROCK_ENABLE_ALL=OFF` or `-DTHEROCK_RESET_FEATURES=ON` to force a
-minimal build):
-
-| Component flag                         | Description                                         |
-| -------------------------------------- | --------------------------------------------------- |
-| `-DTHEROCK_ENABLE_AMD_DBGAPI=ON`       | Enables the ROCm debug API library                  |
-| `-DTHEROCK_ENABLE_COMPILER=ON`         | Enables the GPU+host compiler toolchain             |
-| `-DTHEROCK_ENABLE_CORE_AMDSMI=ON`      | Enables the AMD System Management Interface library |
-| `-DTHEROCK_ENABLE_HIPIFY=ON`           | Enables the hipify tool                             |
-| `-DTHEROCK_ENABLE_CORE_RUNTIME=ON`     | Enables the core runtime components and tools       |
-| `-DTHEROCK_ENABLE_HIP_RUNTIME=ON`      | Enables the HIP runtime components                  |
-| `-DTHEROCK_ENABLE_OCL_RUNTIME=ON`      | Enables the OpenCL runtime components               |
-| `-DTHEROCK_ENABLE_WSL_ROCDXG=ON`       | Enables the WSL ROCDXG bridge library               |
-| `-DTHEROCK_ENABLE_ROCGDB=ON`           | Enables the ROCm debugger (ROCgdb)                  |
-| `-DTHEROCK_ENABLE_ROCPROFV3=ON`        | Enables rocprofv3                                   |
-| `-DTHEROCK_ENABLE_ROCPROFSYS=ON`       | Enables rocprofiler-systems                         |
-| `-DTHEROCK_ENABLE_RCCL=ON`             | Enables RCCL                                        |
-| `-DTHEROCK_ENABLE_ROCSHMEM=ON`         | Enables rocSHMEM                                    |
-| `-DTHEROCK_ENABLE_HIPFILE=ON`          | Enables hipFile                                     |
-| `-DTHEROCK_ENABLE_ROCR_DEBUG_AGENT=ON` | Enables the ROCR debug agent library                |
-| `-DTHEROCK_ENABLE_PRIM=ON`             | Enables the PRIM library                            |
-| `-DTHEROCK_ENABLE_BLAS=ON`             | Enables the BLAS libraries                          |
-| `-DTHEROCK_ENABLE_RAND=ON`             | Enables the RAND libraries                          |
-| `-DTHEROCK_ENABLE_SOLVER=ON`           | Enables the SOLVER libraries                        |
-| `-DTHEROCK_ENABLE_SPARSE=ON`           | Enables the SPARSE libraries                        |
-| `-DTHEROCK_ENABLE_MIOPEN=ON`           | Enables MIOpen                                      |
-| `-DTHEROCK_ENABLE_MIOPEN_PLUGIN=ON`    | Enables MIOpen_plugin                               |
-| `-DTHEROCK_ENABLE_HIPDNN_SAMPLES=ON`   | Enables hipDNN samples (hipDNN Usage Examples)      |
-| `-DTHEROCK_ENABLE_HIPDNN=ON`           | Enables hipDNN                                      |
-| `-DTHEROCK_ENABLE_HIPTENSOR=ON`        | Enables hipTensor                                   |
-| `-DTHEROCK_ENABLE_HIPBLASLT_PLUGIN=ON` | Enables hipBLASLt Plugin                            |
-| `-DTHEROCK_ENABLE_ROCWMMA=ON`          | Enables rocWMMA                                     |
-| `-DTHEROCK_ENABLE_ROCALUTION=ON`       | Enables rocALUTION                                  |
-| `-DTHEROCK_ENABLE_RDC=ON`              | Enables ROCm Data Center Tool (Linux only)          |
-| `-DTHEROCK_ENABLE_LIBHIPCXX=ON`        | Enables libhipcxx                                   |
-| `-DTHEROCK_ENABLE_HIPTHREADS=ON`       | Enables hipThreads                                  |
-| `-DTHEROCK_ENABLE_SYSDEPS_AMD_MESA=ON` | Enables AMD Mesa for media libs                     |
-| `-DTHEROCK_ENABLE_ROCDECODE=ON`        | Enables rocDecode video decoder (Linux only)        |
-| `-DTHEROCK_ENABLE_ROCJPEG=ON`          | Enables rocJPEG JPEG decoder (Linux only)           |
-| `-DTHEROCK_ENABLE_ROCJITSU=ON`         | Enables ROCm emulation tools (Linux only)           |
-| `-DTHEROCK_ENABLE_RPP=ON`              | Enables RPP (Windows: experimental, off by default) |
-
-hipDNN provider plugins:
-
-| Provider flag                           | Description                               |
-| --------------------------------------- | ----------------------------------------- |
-| `-DTHEROCK_ENABLE_MIOPENPROVIDER=ON`    | Enables hipDNN MIOpen-provider plugin     |
-| `-DTHEROCK_ENABLE_HIPBLASLTPROVIDER=ON` | Enables hipDNN hipBLASLt-provider plugin  |
-| `-DTHEROCK_ENABLE_HIPKERNELPROVIDER=ON` | Enables hipDNN hip kernel provider plugin |
-
-> [!TIP]
-> Enabling any features will implicitly enable their *minimum* dependencies. Some
-> libraries (like MIOpen) have a number of *optional* dependencies, which must
-> be enabled manually if enabling/disabling individual features.
-
-> [!TIP]
-> A report of enabled/disabled features and flags will be printed on every
-> CMake configure.
-
-By default, components are built from the sources fetched via the submodules.
-For some components, external sources can be used by setting the following couple
-options:
-
-| External source settings                         | Description                                             |
-| ------------------------------------------------ | ------------------------------------------------------- |
-| `-DTHEROCK_USE_EXTERNAL_<COMPONENT STRING>=OFF`  | Enable/Disable external source location for a component |
-| `-DTHEROCK_<COMPONENT_STRING>_SOURCE_DIR=<PATH>` | External path to the component sources                  |
-
-The following components accept specifying alternative source locations:
-
-| Component string    |
-| ------------------- |
-| `COMPOSABLE_KERNEL` |
-| `ROCGDB`            |
-
-Further flags allow to build components with specific features enabled.
-
-| Other flags                                       | Description                                                              |
-| ------------------------------------------------- | ------------------------------------------------------------------------ |
-| `-DTHEROCK_ENABLE_MPI=OFF`                        | Enables building components with Message Passing Interface (MPI) support |
-| `-DTHEROCK_COMPOSABLE_KERNEL_FOR_MIOPEN_ONLY=OFF` | Builds composable_kernel with only the targets required for MIOpen       |
-
-> [!NOTE]
-> Building components with MPI support, currently requires MPI to be
-> pre-installed until [issue #1284](https://github.com/ROCm/TheRock/issues/1284)
-> is resolved.
-
-### CMake build usage
-
-For workflows that demand frequent rebuilds, it is _recommended to build it with ccache_ enabled to speed up the build.
-See instructions in the next section for [Linux](#ccache-usage-on-linux) and [Windows](#ccache-usage-on-windows).
-
-Otherwise, ROCm/HIP can be configured and build with just the following commands:
-
-```bash
-cmake -B build -GNinja . -DTHEROCK_AMDGPU_FAMILIES=gfx110X-all
-cmake --build build
-```
-
-#### CCache usage on Linux
-
-To build with the [ccache](https://ccache.dev/) compiler cache:
-
-- You must have a recent ccache (>= 4.11 at the time of writing) that supports
-  proper caching with the `--offload-compress` option used for compressing
-  AMDGPU device code.
-- `export CCACHE_SLOPPINESS=include_file_ctime` to support hard-linking
-- Proper setup of the `compiler_check` directive to do safe caching in the
-  presence of compiler bootstrapping
-- Set the C/CXX/HIP compiler launcher options to cmake appropriately.
-
-Since these options are very fiddly and prone to change over time, we recommend
-using the `./build_tools/setup_ccache.py` script to create a `.ccache` directory
-in the repository root with hard coded configuration suitable for the project.
-
-Example:
-
-```bash
-# Any shell used to build must eval setup_ccache.py to set environment
-# variables.
-eval "$(./build_tools/setup_ccache.py)"
-cmake -B build -GNinja -DTHEROCK_AMDGPU_FAMILIES=gfx110X-all \
-  -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-  -DCMAKE_HIP_COMPILER_LAUNCHER=ccache \
-  .
-
-cmake --build build
-```
-
-#### CCache usage on Windows
-
-- You must have a recent ccache (>= 4.13.3 at the time of writing) that contains
-  bug fixes for MSVC and supports proper caching with the `--offload-compress`
-  option used for compressing AMDGPU device code.
-- `export CCACHE_SLOPPINESS=include_file_ctime,pch_defines,time_macros` to
-  support hard-linking and precompiled headers (amd-llvm is built with PCH).
-- Proper setup of the `compiler_check` directive to do safe caching in the
-  presence of compiler bootstrapping.
-- Set the C/CXX compiler launcher options to cmake appropriately.
-
-Since these options are very fiddly and prone to change over time, we recommend
-using the `./build_tools/setup_ccache.py` script to create a `.ccache` directory
-in the repository root with hard coded configuration suitable for the project.
-
-Example (In Command Prompt):
-
-```bat
-# Any command prompt used to build must eval setup_ccache.py to set environment
-# variables.
-for /f "delims=" %i in ('python build_tools/setup_ccache.py') do @%i
-
-cmake -B build -GNinja -DTHEROCK_AMDGPU_FAMILIES=gfx110X-all \
-  -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
-  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
-  .
-
-cmake --build build
-```
-
-### Running tests
-
-Project-wide testing can be controlled with the standard CMake `-DBUILD_TESTING=ON|OFF` flag. This gates both setup of build tests and compilation of installed testing artifacts.
-
-Tests of the integrity of the build are enabled by default and can be run
-with ctest:
-
-```
-ctest --test-dir build
-```
-
-See [TESTING.md](/TESTING.md#testing-changes-to-rocm-subprojects-with-therock)
-for more details about testing.
-
-## Development manuals
-
-- [FAQ](docs/faq.md): Frequently asked questions for TheRock users.
-- [CONTRIBUTING.md](CONTRIBUTING.md): Documentation for the process of contributing to this project including a quick pointer to its governance.
-- [GOVERNANCE.md](GOVERNANCE.md): The governance model, contributor roles, common contribution guidelines, and code of conduct shared across ROCm repositories.
-- [SECURITY.md](SECURITY.md): How to report a security vulnerability.
-- [TESTING.md](TESTING.md): Testing policies for TheRock itself and ROCm subprojects.
-- [Development Guide](docs/development/development_guide.md): Documentation on how to use TheRock as a daily driver for developing any of its contained ROCm components (i.e. vs interacting with each component build individually).
-- [Build System](docs/development/build_system.md): More detailed information about TheRock's build system relevant to people looking to extend TheRock, add components, etc.
-- [Environment Setup Guide](docs/environment_setup_guide.md): Comprehensive guide for setting up a build environment, known workarounds, and other operating specific information.
-- [Git Chores](docs/development/git_chores.md): Procedures for managing the codebase, specifically focused on version control, upstream/downstream, etc.
-- [Dependencies](docs/development/dependencies.md): Further specifications on ROCm-wide standards for depending on various components.
-- [Dockerfiles for TheRock](dockerfiles/README.md): Information about containers used for building, testing, and distributing ROCm using TheRock.
-- [Build Artifacts](docs/development/artifacts.md): Documentation about the outputs of the build system.
-- [Releases Page](RELEASES.md): Documentation for how to leverage our build artifacts.
-- [Supported GPUs](SUPPORTED_GPUS.md): Current support status and prioritized roadmap for each AMD GPU architecture.
+This fork modifies experimental Windows ROCr/HIP behavior. Results depend on
+the GPU, Windows version, driver, compiler, and application. The Ollama result
+was verified on one machine; `rocminfo` detection alone does not establish
+that a different application or system will work. Back up existing runtime
+files and test in an isolated installation before replacing any ROCm DLLs.
