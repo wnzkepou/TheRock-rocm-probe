@@ -41,10 +41,46 @@ independently may drop the compatibility fixes.
   it identified the RX 6800, offloaded all 29 model layers, and reported the
   model in VRAM. That validation required staging runtime DLLs in Ollama's
   ROCm backend and using its versioned backend name, `rocm_v7_1`.
+- Component probes added `rocDecode`/AMD Mesa, FFTW3, and host BLAS to the
+  active build configuration. Their artifact targets built successfully.
+  The updated configuration has not been installed as a complete distribution;
+  the install tree above reflects the earlier full install.
 
-This is not every TheRock feature. CV, media, emulation, and WSL were disabled;
-other optional components are disabled according to the build cache. Inspect
-`build-rocm1030\CMakeCache.txt` for the exact selection.
+This is not every TheRock feature. RPP, emulation, WSL ROCDXG, and several
+optional components were rejected or could not be built on the native Windows
+host. See the probe results below. Inspect `build-rocm1030\CMakeCache.txt` for
+the current selection.
+
+## Component probe results
+
+Each optional feature below was enabled individually, with previously
+successful optional features retained. Configure-time rejections were turned
+back off before the next probe. The successful media and optional artifacts
+were built for the existing `gfx1030;gfx1031` configuration.
+
+| Area | Flags / component | Result |
+| --- | --- | --- |
+| CV | `THEROCK_ENABLE_CV_LIBS=ON`, `THEROCK_ENABLE_RPP=ON` | Configure rejected: `RPP is not supported on Windows`. Both remain off. |
+| Media | `THEROCK_ENABLE_MEDIA_LIBS=ON`, `THEROCK_ENABLE_ROCDECODE=ON`, `THEROCK_ENABLE_SYSDEPS_AMD_MESA=ON` | `artifact-rocdecode` and the AMD Mesa sysdep built successfully. Mesa source was initialized at the parent-pinned submodule commit after the first build attempt found it absent. These options remain on. |
+| Emulation | `THEROCK_ENABLE_ROCJITSU=ON`; Mirage enabled separately | Each configure was rejected with “not supported on Windows.” Both remain off. |
+| WSL | `THEROCK_ENABLE_WSL=ON`, `THEROCK_ENABLE_WSL_ROCDXG=ON` | Top-level configure passed, but the nested `wsl-rocdxg` configure rejected the native Windows host and requires Linux/WSL. The available Alpine WSL distro lacked the required build tools, so no artifact was built. Both options remain off. |
+| Optional success | `THEROCK_ENABLE_FFTW3=ON` | `artifact-fftw3` built successfully; remains on. |
+| Optional success | `THEROCK_ENABLE_HOST_BLAS=ON` | `artifact-host-blas` (OpenBLAS) built successfully; remains on. |
+| Optional rejection | `CORE_HRR`, `CORE_AMDSMI`, `ELFIO`, `HOST_SUITE_SPARSE` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
+| Optional rejection | `AQLPROFILE`, `PROFILER_HUB`, `ROCPROFILER_COMPUTE`, `ROCPROFSYS`, `ROCPROFV3`, `ROCR_DEBUG_AGENT`, `ROCGDB` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
+| Optional rejection | `HIPFILE`, `RCCL`, `RDC`, `ROCSHMEM`, `ROCJPEG`, `ROCJITSU_HOTSWAP` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
+
+Names in the optional rejection rows are suffixes of the corresponding
+`THEROCK_ENABLE_<name>` CMake cache flags.
+For the optional rejection rows, the CMake feature validator reported the
+specific feature as “not supported on Windows”; no build target was attempted.
+The test-only switches (`CORE_KFDTESTS`, `CORE_RUNTIME_TESTS`,
+`ROCR_DEBUG_AGENT_TESTS`, and `ROCPROFILER_SYSTEMS_EXAMPLES`) were not probed:
+they add tests/examples rather than standalone runtime components. Linux system
+dependency switches and the `HOST_MATH` umbrella option were also left alone;
+they are dependencies or aggregate selections, not independent components.
+The supported math, compiler, and ML components from the original build were
+not re-probed as part of this optional-component pass.
 
 ## Important local source changes
 

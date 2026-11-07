@@ -18,12 +18,24 @@ submodules.
 - Ollama was tested on this machine with the locally built ROCr/HIP runtime
   and its `rocm_v7_1` backend. Ollama identified the RX 6800, offloaded all
   29 model layers to the GPU, and reported the model resident in VRAM.
-- The Windows-applicable components selected for this configuration built
-  and installed to `C:\Workspaces\TheRock-rocm-probe\install`.
+- The original Windows-applicable selection was built and installed to
+  `C:\Workspaces\TheRock-rocm-probe\install`. Additional component probes
+  below have been built in the build tree but not installed as a full updated
+  distribution.
 
 The build targets `gfx1030;gfx1031`. It does not include every TheRock feature:
-CV, media, emulation, and WSL were disabled, as were other optional components.
-See the detailed notes for the exact configuration and caveats.
+the probe results are summarized here:
+
+| Area | Result |
+| --- | --- |
+| CV / RPP | Configure rejected: RPP is not supported on Windows. |
+| Media | `rocDecode` and its AMD Mesa dependency built successfully. |
+| Emulation | `rocJITsu` and Mirage were each rejected as unsupported on Windows. |
+| WSL | The WSL ROCDXG subproject requires a Linux/WSL build environment; it did not build from native Windows. |
+| Other optional components | `FFTW3` and host BLAS built successfully. Other individually tested Windows-unsupported components were rejected during configure. |
+
+See the detailed notes for per-flag results, methodology, and the exact build
+configuration.
 
 ## Get the source
 
