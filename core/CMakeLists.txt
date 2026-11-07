@@ -272,13 +272,19 @@ if(THEROCK_ENABLE_HIP_RUNTIME AND _hip_clr_enabled)
     # Windows CLR options
     set(_compute_pal_dir "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/shared/amdgpu-windows-interop")
     cmake_path(NORMAL_PATH _compute_pal_dir)
+    set(_roccr_pal_enabled ON)
+    set(_rocr_dll_load OFF)
+    if(THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME)
+      set(_roccr_pal_enabled OFF)
+      set(_rocr_dll_load ON)
+    endif()
     list(APPEND HIP_CLR_CMAKE_ARGS
       "-DUSE_PROF_API=OFF"
       "-D__HIP_ENABLE_PCH=OFF"
-      "-DROCCLR_ENABLE_PAL=1"
+      "-DROCCLR_ENABLE_PAL=${_roccr_pal_enabled}"
       "-DROCCLR_ENABLE_HSA=1"
       "-D__HIP_ENABLE_RTC=1"
-      "-DROCR_DLL_LOAD=0"
+      "-DROCR_DLL_LOAD=${_rocr_dll_load}"
       "-DAMD_COMPUTE_WIN=${_compute_pal_dir}"
     )
   else()
