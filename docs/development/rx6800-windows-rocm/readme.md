@@ -41,10 +41,29 @@ independently may drop the compatibility fixes.
   it identified the RX 6800, offloaded all 29 model layers, and reported the
   model in VRAM. That validation required staging runtime DLLs in Ollama's
   ROCm backend and using its versioned backend name, `rocm_v7_1`.
+- Ollama's persistent user environment was set to `GPU_ENABLE_PAL=0`,
+  `OLLAMA_LLM_LIBRARY=rocm_v7_1`, `OLLAMA_VULKAN=0`, and
+  `HIP_VISIBLE_DEVICES=0`; `GGML_VK_VISIBLE_DEVICES` was removed. After
+  restarting the desktop app with these settings, its server detected the
+  RX 6800 as its ROCm `gfx1030` device, not the NVIDIA T600. A
+  `qwen2.5-coder:7b` prompt succeeded, `ollama ps` reported `100% GPU`, and
+  the runner logged all 29 model layers offloaded. New Ollama processes must
+  inherit `GPU_ENABLE_PAL=0` for this setup.
+- A project-local `.venv` was set up with Python 3.14.10 and the repository's
+  `requirements.txt`. Dependency consistency (`pip check`), key imports,
+  pytest, and Meson were verified successfully. Create an equivalent
+  environment from the repository root with:
+
+  ```powershell
+  py -3 -m venv .venv
+  .\.venv\Scripts\Activate.ps1
+  python -m pip install -r requirements.txt
+  ```
 - Component probes added `rocDecode`/AMD Mesa, FFTW3, and host BLAS to the
-  active build configuration. Their artifact targets built successfully.
-  The updated configuration has not been installed as a complete distribution;
-  the install tree above reflects the earlier full install.
+  active build configuration. Their artifact targets built successfully, and
+  the updated configuration was installed to the prefix above with
+  `ninja install-rocm`. After installation, `rocminfo.exe` continued to report
+  the RX 6800 as `gfx1030`.
 
 This is not every TheRock feature. RPP, emulation, WSL ROCDXG, and several
 optional components were rejected or could not be built on the native Windows
@@ -61,11 +80,11 @@ were built for the existing `gfx1030;gfx1031` configuration.
 | Area | Flags / component | Result |
 | --- | --- | --- |
 | CV | `THEROCK_ENABLE_CV_LIBS=ON`, `THEROCK_ENABLE_RPP=ON` | Configure rejected: `RPP is not supported on Windows`. Both remain off. |
-| Media | `THEROCK_ENABLE_MEDIA_LIBS=ON`, `THEROCK_ENABLE_ROCDECODE=ON`, `THEROCK_ENABLE_SYSDEPS_AMD_MESA=ON` | `artifact-rocdecode` and the AMD Mesa sysdep built successfully. Mesa source was initialized at the parent-pinned submodule commit after the first build attempt found it absent. These options remain on. |
+| Media | `THEROCK_ENABLE_MEDIA_LIBS=ON`, `THEROCK_ENABLE_ROCDECODE=ON`, `THEROCK_ENABLE_SYSDEPS_AMD_MESA=ON` | `artifact-rocdecode` and the AMD Mesa sysdep built successfully and were installed. Mesa source was initialized at the parent-pinned submodule commit after the first build attempt found it absent. These options remain on. |
 | Emulation | `THEROCK_ENABLE_ROCJITSU=ON`; Mirage enabled separately | Each configure was rejected with “not supported on Windows.” Both remain off. |
 | WSL | `THEROCK_ENABLE_WSL=ON`, `THEROCK_ENABLE_WSL_ROCDXG=ON` | Top-level configure passed, but the nested `wsl-rocdxg` configure rejected the native Windows host and requires Linux/WSL. The available Alpine WSL distro lacked the required build tools, so no artifact was built. Both options remain off. |
-| Optional success | `THEROCK_ENABLE_FFTW3=ON` | `artifact-fftw3` built successfully; remains on. |
-| Optional success | `THEROCK_ENABLE_HOST_BLAS=ON` | `artifact-host-blas` (OpenBLAS) built successfully; remains on. |
+| Optional success | `THEROCK_ENABLE_FFTW3=ON` | `artifact-fftw3` built and installed successfully; remains on. |
+| Optional success | `THEROCK_ENABLE_HOST_BLAS=ON` | `artifact-host-blas` (OpenBLAS) built and installed successfully; remains on. |
 | Optional rejection | `CORE_HRR`, `CORE_AMDSMI`, `ELFIO`, `HOST_SUITE_SPARSE` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
 | Optional rejection | `AQLPROFILE`, `PROFILER_HUB`, `ROCPROFILER_COMPUTE`, `ROCPROFSYS`, `ROCPROFV3`, `ROCR_DEBUG_AGENT`, `ROCGDB` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
 | Optional rejection | `HIPFILE`, `RCCL`, `RDC`, `ROCSHMEM`, `ROCJPEG`, `ROCJITSU_HOTSWAP` | Each was enabled individually and rejected during feature validation as unsupported on Windows. They remain off. |
@@ -162,6 +181,11 @@ workarounds; it is not a clean, portable build recipe.
   were used locally. Keep those junctions while generated build manifests
   depend on them; do not edit the canonical source/glob manifests to shorten
   paths.
+- Re-running the full install after changing the feature selection required
+  setting `LIBHIPCXX_COPY_TO_BUILD=OFF` in the generated top-level Ninja
+  command. This uses libhipcxx's documented no-copy mode and avoids a Windows
+  symlink-copy error during reconfiguration; the source checkout was not
+  changed.
 - External-project builds should use TheRock's sanitized environment. If
   running a nested build manually, unset any machine-wide `ROCM_PATH`,
   `ROCM_DIR`, `HIP_PATH`, and `HIP_DIR` so installed ROCm headers do not leak

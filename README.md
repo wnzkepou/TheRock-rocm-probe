@@ -16,12 +16,16 @@ submodules.
 
 - TheRock's installed `rocminfo.exe` detects the RX 6800 as `gfx1030`.
 - Ollama was tested on this machine with the locally built ROCr/HIP runtime
-  and its `rocm_v7_1` backend. Ollama identified the RX 6800, offloaded all
-  29 model layers to the GPU, and reported the model resident in VRAM.
-- The original Windows-applicable selection was built and installed to
-  `C:\Workspaces\TheRock-rocm-probe\install`. Additional component probes
-  below have been built in the build tree but not installed as a full updated
-  distribution.
+  and its `rocm_v7_1` backend. It identified the RX 6800, offloaded all 29
+  model layers to the GPU, and reported the model resident in VRAM. Its
+  persistent configuration disables Vulkan and selects the RX 6800, avoiding
+  the NVIDIA T600.
+- The project-local Python 3.14 environment installed
+  `requirements.txt`; `pip check`, dependency imports, pytest, and Meson
+  verification passed.
+- The selected Windows-applicable components, including the successful
+  rocDecode/AMD Mesa, FFTW3, and host-BLAS probes, were built and installed to
+  `C:\Workspaces\TheRock-rocm-probe\install`.
 
 The build targets `gfx1030;gfx1031`. It does not include every TheRock feature:
 the probe results are summarized here:
@@ -55,8 +59,17 @@ the compatibility changes.
 
 1. Prepare Windows and Visual Studio 2022 using the
    [upstream TheRock Windows support guide](https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md).
-2. Set up Python dependencies and fetch the remaining pinned sources with
-   `build_tools\fetch_sources.py`.
+2. Set up Python dependencies and fetch the remaining pinned sources:
+
+   ```powershell
+   py -3 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   python -m pip install -r requirements.txt
+   python build_tools\fetch_sources.py
+   ```
+
+   The environment used for this probe is Python 3.14. The `.venv` directory
+   is local to the checkout and is ignored by Git.
 3. Configure a Ninja build for `gfx1030;gfx1031`, enable the experimental
    `THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME` option, and explicitly select
    the desired Windows-capable feature groups.
