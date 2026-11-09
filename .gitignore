@@ -28,6 +28,8 @@ __pycache__
 
 # Output directories.
 /build/
+/build-rocm1030/*
+!/build-rocm1030/WindowsRX6800BuildOptions.cmake
 /install/
 /output-*/
 /out/

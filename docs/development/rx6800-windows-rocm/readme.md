@@ -121,8 +121,8 @@ behavior:
   has a Windows/HIP vector-access compatibility fix.
 
 The source changes are committed in this fork and its two modified submodules.
-The `build-rocm1030` directory contains generated build files and local
-workarounds; it is not a clean, portable build recipe.
+The generated `build-rocm1030` tree contains local build files and workarounds;
+only its portable initial-cache options file is committed.
 
 ## Approximate build process
 
@@ -133,12 +133,22 @@ workarounds; it is not a clean, portable build recipe.
    sources using `build_tools\fetch_sources.py`. The `rocm-systems` and
    `rocm-libraries` submodules are already pinned by the parent checkout; the
    math-library build also uses the pinned `libhipcxx` source.
-3. Configure a Ninja build for `gfx1030;gfx1031`, enable the experimental
-   `THEROCK_FLAG_HSA_WINDOWS_SHARED_RUNTIME` option, and select the desired
-   Windows-capable feature groups. In this checkout those settings are in
-   `build-rocm1030\CMakeCache.txt`. `THEROCK_ENABLE_ALL=ON` alone did not
-   replace previously cached feature-group choices; check the cache rather
-   than assuming every option was enabled.
+3. Configure a Ninja build with the committed
+   `build-rocm1030\WindowsRX6800BuildOptions.cmake` initial-cache file. It
+   records the `gfx1030;gfx1031` targets, the experimental shared-HSA option,
+   and the tested Windows feature selection. Set the install prefix for the
+   local machine:
+
+   ```powershell
+   cmake -S . -B build-rocm1030 -G Ninja `
+     -C build-rocm1030/WindowsRX6800BuildOptions.cmake `
+     -DCMAKE_INSTALL_PREFIX=C:/path/to/install
+   ```
+
+   `THEROCK_ENABLE_ALL=ON` alone does not override existing feature choices
+   in an already-configured build tree. The generated `CMakeCache.txt`,
+   manifests, binaries, and local workaround edits are intentionally not
+   committed.
 4. Build and install from a Visual Studio developer environment. For this
    checkout, the equivalent command is:
 
