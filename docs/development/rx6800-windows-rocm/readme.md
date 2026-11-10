@@ -198,8 +198,9 @@ only its portable initial-cache options file is committed.
   `build_tools\install_ollama_rocm.ps1` from a PowerShell prompt at the
   repository root. It installs Ollama with `winget` only if Ollama is absent,
   verifies the versioned `rocm_v7_1` backend, backs up any differing runtime
-  DLLs, then stages `amdhip64_7.dll`, `hsa-runtime64.dll`, `hiprtc0718.dll`,
-  and `hiprtc-builtins0718.dll` from `install\bin`. It persists
+  DLLs, then stages `amdhip64_7.dll`, `amd_comgr.dll`, `hsa-runtime64.dll`,
+  `rocm_kpack.dll`, `hiprtc0718.dll`, and `hiprtc-builtins0718.dll` from
+  `install\bin`. It persists
   `GPU_ENABLE_PAL=0`, `OLLAMA_LLM_LIBRARY=rocm_v7_1`, and `OLLAMA_VULKAN=0`
   for the current user. It clears existing HIP/ROCr/Vulkan device-index
   filters; it does not set a GPU index or PCI/bus address, so ROCm performs

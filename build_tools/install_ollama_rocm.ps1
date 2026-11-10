@@ -11,7 +11,9 @@ $OllamaExePath = Join-Path $OllamaInstallPath 'ollama.exe'
 $OllamaBackendPath = Join-Path $OllamaInstallPath 'lib\ollama\rocm_v7_1'
 $RequiredRuntimeFiles = @(
   'amdhip64_7.dll'
+  'amd_comgr.dll'
   'hsa-runtime64.dll'
+  'rocm_kpack.dll'
   'hiprtc0718.dll'
   'hiprtc-builtins0718.dll'
 )

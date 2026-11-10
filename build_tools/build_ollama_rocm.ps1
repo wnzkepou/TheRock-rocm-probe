@@ -189,7 +189,14 @@ if (-not (Test-Path -LiteralPath $backendDll -PathType Leaf)) {
 
 if ($PSCmdlet.ShouldProcess($backendPath, 'Stage TheRock runtime DLL dependencies next to the Ollama ROCm backend')) {
   New-Item -ItemType Directory -Path $backendPath -Force | Out-Null
-  foreach ($file in @('amdhip64_7.dll', 'hsa-runtime64.dll', 'hiprtc0718.dll', 'hiprtc-builtins0718.dll')) {
+  foreach ($file in @(
+      'amdhip64_7.dll'
+      'amd_comgr.dll'
+      'hsa-runtime64.dll'
+      'rocm_kpack.dll'
+      'hiprtc0718.dll'
+      'hiprtc-builtins0718.dll'
+    )) {
     $source = Join-Path $TheRockBinPath $file
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
       throw "Required TheRock runtime DLL is missing: $source"
