@@ -41,14 +41,14 @@ independently may drop the compatibility fixes.
   it identified the RX 6800, offloaded all 29 model layers, and reported the
   model in VRAM. That validation required staging runtime DLLs in Ollama's
   ROCm backend and using its versioned backend name, `rocm_v7_1`.
-- Ollama's persistent user environment was set to `GPU_ENABLE_PAL=0`,
-  `OLLAMA_LLM_LIBRARY=rocm_v7_1`, `OLLAMA_VULKAN=0`, and
-  `HIP_VISIBLE_DEVICES=0`; `GGML_VK_VISIBLE_DEVICES` was removed. After
-  restarting the desktop app with these settings, its server detected the
-  RX 6800 as its ROCm `gfx1030` device, not the NVIDIA T600. A
-  `qwen2.5-coder:7b` prompt succeeded, `ollama ps` reported `100% GPU`, and
-  the runner logged all 29 model layers offloaded. New Ollama processes must
-  inherit `GPU_ENABLE_PAL=0` for this setup.
+- For the initial manual Ollama validation, the persistent user environment
+  included `GPU_ENABLE_PAL=0`, `OLLAMA_LLM_LIBRARY=rocm_v7_1`,
+  `OLLAMA_VULKAN=0`, and `HIP_VISIBLE_DEVICES=0`; `GGML_VK_VISIBLE_DEVICES`
+  was removed. After restarting the desktop app, it detected the RX 6800 as
+  its ROCm `gfx1030` device, not the NVIDIA T600. A `qwen2.5-coder:7b`
+  prompt succeeded, `ollama ps` reported `100% GPU`, and the runner logged
+  all 29 model layers offloaded. The provided installer now clears
+  device-index filters and leaves runtime GPU discovery automatic.
 - A project-local `.venv` was set up with Python 3.14.10 and the repository's
   `requirements.txt`. Dependency consistency (`pip check`), key imports,
   pytest, and Meson were verified successfully. Create an equivalent
@@ -180,6 +180,32 @@ only its portable initial-cache options file is committed.
 
 ## Build-specific caveats
 
+- To build Ollama itself against this TheRock installation, run
+  `build_tools\build_ollama_rocm.ps1`. The script clones
+  `https://github.com/ollama/ollama.git` with its submodules into a separate
+  `ollama-rocm-build\source` checkout beside the TheRock repository, then
+  builds Ollama and the `rocm_v7_1` backend with the TheRock HIP compiler and
+  `CMAKE_PREFIX_PATH` set to `install`. `AMDGPU_TARGETS=gfx1030` controls
+  compiled kernel support only; it does not select a runtime GPU or bus ID.
+  The resulting `ollama.exe` is in the source checkout, and the backend
+  payload plus required TheRock runtime DLLs are in
+  `ollama-rocm-build\build-rocm\lib\ollama\rocm_v7_1`. This is a local build
+  output; the script does not replace the installed Ollama application.
+  Existing source checkouts must use the official Ollama origin and have a
+  clean worktree. Pass `-UpdateSource` to fast-forward a clean local branch.
+  Ollama source fetching and the first native build require network access.
+- To install Ollama and stage the runtime built by TheRock, run
+  `build_tools\install_ollama_rocm.ps1` from a PowerShell prompt at the
+  repository root. It installs Ollama with `winget` only if Ollama is absent,
+  verifies the versioned `rocm_v7_1` backend, backs up any differing runtime
+  DLLs, then stages `amdhip64_7.dll`, `hsa-runtime64.dll`, `hiprtc0718.dll`,
+  and `hiprtc-builtins0718.dll` from `install\bin`. It persists
+  `GPU_ENABLE_PAL=0`, `OLLAMA_LLM_LIBRARY=rocm_v7_1`, and `OLLAMA_VULKAN=0`
+  for the current user. It clears existing HIP/ROCr/Vulkan device-index
+  filters; it does not set a GPU index or PCI/bus address, so ROCm performs
+  automatic device discovery. Exit Ollama before running the script, then
+  reopen it afterward so the new environment takes effect. Use `-WhatIf` to
+  preview the actions without changing files or environment variables.
 - HIPBLASLt in the pinned source does not support `gfx1030`; TheRock falls back
   to `gfx1100`. Do not force its target list to `gfx1030`/`gfx1031`. Three
   HIPBLASLt test/benchmark executables containing only `gfx1100` code had to

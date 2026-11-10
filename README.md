@@ -18,8 +18,9 @@ submodules.
 - Ollama was tested on this machine with the locally built ROCr/HIP runtime
   and its `rocm_v7_1` backend. It identified the RX 6800, offloaded all 29
   model layers to the GPU, and reported the model resident in VRAM. Its
-  persistent configuration disables Vulkan and selects the RX 6800, avoiding
-  the NVIDIA T600.
+  Vulkan backend was disabled for that test to avoid the NVIDIA T600. The
+  provided installer leaves GPU discovery automatic and does not select a
+  GPU index or bus ID.
 - The project-local Python 3.14 environment installed
   `requirements.txt`; `pip check`, dependency imports, pytest, and Meson
   verification passed.
@@ -94,6 +95,16 @@ See the
 [Windows RX 6800 build notes](docs/development/rx6800-windows-rocm/readme.md)
 for the tested configuration, experimental source changes, approximate
 commands, DLL/driver cautions, and known limitations.
+
+To install Ollama and configure its ROCm backend to use this TheRock install,
+run `build_tools\install_ollama_rocm.ps1` from PowerShell. The script sets the
+required backend environment variables without selecting a GPU or bus ID; see
+the detailed notes for its backup and restart behavior.
+
+To clone the official Ollama Git repository and build Ollama plus its
+`rocm_v7_1` backend against this TheRock install, run
+`build_tools\build_ollama_rocm.ps1`. It uses a separate clean checkout and
+does not modify an existing Ollama installation.
 
 ## Disclaimer
 
