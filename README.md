@@ -27,6 +27,13 @@ submodules.
 - The selected Windows-applicable components, including the successful
   rocDecode/AMD Mesa, FFTW3, and host-BLAS probes, were built and installed to
   `C:\Workspaces\TheRock-rocm-probe\install`.
+- A second Windows 11 Pro installation on an RX 6700 XT completed for
+  `gfx1030;gfx1031`; the installed `rocminfo.exe` reported the card as
+  `gfx1031`. ccache 4.14.2 was used with up to eight aggregate build workers.
+- Ollama 0.40.16's ROCm DLLs were staged and hash-verified. Its API responded,
+  and with `HSA_OVERRIDE_GFX_VERSION=10.3.0` it enumerated the RX 6700 XT as
+  `gfx1030`. This was a device-detection check only; no model inference was
+  performed.
 
 The build targets `gfx1030;gfx1031`. It does not include every TheRock feature:
 the probe results are summarized here:
@@ -100,6 +107,11 @@ To install Ollama and configure its ROCm backend to use this TheRock install,
 run `build_tools\install_ollama_rocm.ps1` from PowerShell. The script sets the
 required backend environment variables without selecting a GPU or bus ID; see
 the detailed notes for its backup and restart behavior.
+For Ollama 0.40.16 on an RX 6700 XT, the backend initially dropped `gfx1031`
+because its rocBLAS target map did not include it. The user-level
+`HSA_OVERRIDE_GFX_VERSION=10.3.0` setting allowed Ollama to enumerate the card
+as `gfx1030`; this compatibility override affects other HSA applications too.
+It has not been validated with model inference.
 
 To clone the official Ollama Git repository and build Ollama plus its
 `rocm_v7_1` backend against this TheRock install, run

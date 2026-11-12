@@ -70,6 +70,35 @@ optional components were rejected or could not be built on the native Windows
 host. See the probe results below. Inspect `build-rocm1030\CMakeCache.txt` for
 the current selection.
 
+## Additional host verification: RX 6700 XT
+
+A second native installation was completed on Windows 11 Pro with an AMD
+Radeon RX 6700 XT on 12 November 2026. This is separate from the historical
+RX 6800 results above.
+
+- The existing `build-rocm1030` configuration targeted `gfx1030;gfx1031`;
+  `ninja install-rocm` completed, and the installed `rocminfo.exe` reported
+  `AMD Radeon RX 6700 XT` as `gfx1031`.
+- Python 3.14.10 and the project requirements were installed in `.venv`;
+  `pip check` passed.
+- ccache 4.14.2 was configured for the build. Its final stats showed 17,992
+  hits from 63,426 cacheable calls and a 2.1 GB cache. Root Ninja used `-j 2`
+  with nested parallelism set to 4, for up to eight aggregate compile workers.
+- Ollama 0.40.16 was already installed. After
+  `build_tools\install_ollama_rocm.ps1` staged the six runtime DLLs, their
+  SHA-256 hashes matched the TheRock install and the local Ollama API
+  responded. Without an override, Ollama logged that it dropped `gfx1031`
+  because its rocBLAS target map did not support it. With the user-level
+  `HSA_OVERRIDE_GFX_VERSION=10.3.0` override, Ollama enumerated the RX 6700 XT
+  as `gfx1030`. This override affects other HSA applications as well.
+  Detection and API response were verified; no model was downloaded and no
+  inference was run.
+- Generated artifact and flattening commands used the existing `C:\b` build
+  junction to keep deeply nested libhipcxx paths below Windows' path limit.
+  The Windows SDK `x64` tools directory was also added to `PATH` so nested
+  link steps could locate `mt.exe`. These were local generated-build
+  workarounds, not source changes.
+
 ## Component probe results
 
 Each optional feature below was enabled individually, with previously
