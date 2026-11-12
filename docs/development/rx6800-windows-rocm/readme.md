@@ -76,6 +76,18 @@ A second native installation was completed on Windows 11 Pro with an AMD
 Radeon RX 6700 XT on 12 November 2026. This is separate from the historical
 RX 6800 results above.
 
+- The portable initial-cache profile is
+  [`WindowsRX6700XTBuildOptions.cmake`](../rx6700xt-windows-rocm/WindowsRX6700XTBuildOptions.cmake).
+  It preserves the tested `gfx1030;gfx1031` target list and Windows feature
+  selection. Use a fresh build directory to keep this profile separate from
+  the RX 6800 build:
+
+  ```powershell
+  cmake -S . -B build-rocm1030-rx6700xt -G Ninja `
+    -C docs/development/rx6700xt-windows-rocm/WindowsRX6700XTBuildOptions.cmake `
+    -DCMAKE_INSTALL_PREFIX=C:/path/to/install
+  ```
+
 - The existing `build-rocm1030` configuration targeted `gfx1030;gfx1031`;
   `ninja install-rocm` completed, and the installed `rocminfo.exe` reported
   `AMD Radeon RX 6700 XT` as `gfx1031`.

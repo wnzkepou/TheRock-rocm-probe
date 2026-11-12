@@ -1,0 +1,149 @@
+# Initial CMake cache for the native Windows RX 6700 XT probe.
+# The tested build included both gfx1030 and gfx1031; the RX 6700 XT reports gfx1031.
+# Configure from the repository root with:
+#   cmake -S . -B build-rocm1030-rx6700xt -G Ninja
+#     -C docs/development/rx6700xt-windows-rocm/WindowsRX6700XTBuildOptions.cmake
+# Set CMAKE_INSTALL_PREFIX separately for the local machine.
+
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+    "Build type for the RX 6700 XT probe" FORCE)
+set(THEROCK_AMDGPU_TARGETS "gfx1030;gfx1031" CACHE STRING
+    "GPU targets for the RX 6700 XT probe" FORCE)
+set(THEROCK_DIST_AMDGPU_TARGETS "gfx1030;gfx1031" CACHE STRING
+    "Distribution GPU targets for the RX 6700 XT probe" FORCE)
+set(THEROCK_AMDGPU_DIST_BUNDLE_NAME "gfx1030-gfx1031" CACHE STRING
+    "Distribution bundle name for the RX 6700 XT probe" FORCE)
+set(THEROCK_ENABLE_ALL ON CACHE BOOL
+    "Enable Windows-supported TheRock feature groups" FORCE)
+
+set(_therock_rx6700xt_features_on
+  AMD_DBGAPI
+  BASE
+  BLAS
+  COMM_LIBS
+  COMPILER
+  COMPOSABLE_KERNEL
+  CORE
+  CORE_HIPINFO
+  CORE_RUNTIME
+  DC_TOOLS
+  DEBUG_TOOLS
+  FFT
+  FFTW3
+  FLATBUFFERS
+  FMT
+  GRPC
+  HIPBLASLTPROVIDER
+  HIPDNN
+  HIPDNN_SAMPLES
+  HIPIFY
+  HIPKERNELPROVIDER
+  HIPTENSOR
+  HIPTHREADS
+  HIP_RUNTIME
+  HOST_BLAS
+  KPACK
+  LIBHIPCXX
+  MATH_LIBS
+  MEDIA_LIBS
+  MIOPEN
+  MIOPENPROVIDER
+  ML_LIBS
+  NLOHMANN_JSON
+  OCL_ICD
+  OCL_RUNTIME
+  OPENMPI
+  PRIM
+  PROFILER
+  RAND
+  ROCALUTION
+  ROCDECODE
+  ROCWMMA
+  SOLVER
+  SPARSE
+  SPDLOG
+  STORAGE_LIBS
+  SUPPORT
+  SYSDEPS
+  SYSDEPS_AMD_MESA
+)
+foreach(_feature IN LISTS _therock_rx6700xt_features_on)
+  set(THEROCK_ENABLE_${_feature} ON CACHE BOOL
+      "Windows RX 6700 XT probe feature selection" FORCE)
+endforeach()
+
+set(_therock_rx6700xt_features_off
+  AQLPROFILE
+  CORE_AMDSMI
+  CORE_HIPTESTS
+  CORE_HRR
+  CORE_KFDTESTS
+  CORE_RUNTIME_TESTS
+  CV_LIBS
+  ELFIO
+  EMULATION
+  HIPDNN_INTEGRATION_TESTS
+  HIPFILE
+  HOST_MATH
+  HOST_SUITE_SPARSE
+  MIRAGE
+  PROFILER_HUB
+  RCCL
+  RDC
+  ROCGDB
+  ROCJITSU
+  ROCJITSU_HOTSWAP
+  ROCJPEG
+  ROCPROFILER_COMPUTE
+  ROCPROFILER_SYSTEMS_EXAMPLES
+  ROCPROFSYS
+  ROCPROFV3
+  ROCR_DEBUG_AGENT
+  ROCR_DEBUG_AGENT_TESTS
+  ROCSHMEM
+  RPP
+  SYSDEPS_EXPAT
+  SYSDEPS_GMP
+  SYSDEPS_HWLOC
+  SYSDEPS_LIBMNL
+  SYSDEPS_LIBNL
+  SYSDEPS_LIBPCIACCESS
+  SYSDEPS_MPFR
+  SYSDEPS_NCURSES
+  SYSDEPS_UTIL_LINUX
+  WSL
+  WSL_ROCDXG
+)
+foreach(_feature IN LISTS _therock_rx6700xt_features_off)
+  set(THEROCK_ENABLE_${_feature} OFF CACHE BOOL
+      "Windows RX 6700 XT probe feature selection" FORCE)
+endforeach()
+
+set(_therock_rx6700xt_flags_on
+  BUILD_HIPCCL
+  HIPDNN_ENABLE_CUDNN_COMPATIBILITY
+  HIPDNN_ENABLE_KERNEL_INGESTOR
+  HIPDNN_ENABLE_SDPA
+  HIPKERNELPROVIDER_ENABLE_FLYDSL
+  HSA_WINDOWS_SHARED_RUNTIME
+  KPACK_SPLIT_ARTIFACTS
+)
+foreach(_flag IN LISTS _therock_rx6700xt_flags_on)
+  set(THEROCK_FLAG_${_flag} ON CACHE BOOL
+      "Windows RX 6700 XT probe build flag" FORCE)
+endforeach()
+
+set(_therock_rx6700xt_flags_off
+  FFTW3_AUTOTOOLS_BUILD
+  HIPBLASLTPROVIDER_ENABLE_MX_GEMM
+  HIPKERNELPROVIDER_ENABLE_ROCKE
+  INCLUDE_HRX
+  LLVM_ENABLE_ASSERTIONS
+  MIOPEN_ENABLE_HIPDNN_WRAPPER
+  STAMP_LIBRARY_GIT_VERSIONS
+  WINDOWS_DRIVER_BUILD
+)
+foreach(_flag IN LISTS _therock_rx6700xt_flags_off)
+  set(THEROCK_FLAG_${_flag} OFF CACHE BOOL
+      "Windows RX 6700 XT probe build flag" FORCE)
+endforeach()
